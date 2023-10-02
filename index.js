@@ -5,8 +5,10 @@ const bodyParser = require("body-parser");
 const createError = require("http-errors");
 const axios = require("axios");
 const { fetchBlogsDataMiddleware } = require("./utils/middleware");
+require("dotenv").config();
 
 const app = express();
+
 // middleware for logging http req in dev env
 app.use(morgan("combined"));
 // middleware setup for data serialization
@@ -26,7 +28,6 @@ app.get("/api/blog-stats", fetchBlogsDataMiddleware, async (req, res, next) => {
     }
 
     // 2. Process the Data using Lodash package
-
     try {
       // Calculate the total number of blogs fetched
       const totalBlogs = blogData.length;
@@ -51,7 +52,6 @@ app.get("/api/blog-stats", fetchBlogsDataMiddleware, async (req, res, next) => {
         blogsWithPrivacyTitle,
         uniqueBlogTitles,
       });
-
     } catch (error) {
       // handle error while data processing
       const processingError = createError(500, "Error processing the data");
@@ -62,23 +62,43 @@ app.get("/api/blog-stats", fetchBlogsDataMiddleware, async (req, res, next) => {
   }
 });
 
-app.get("/api/blog-search",fetchBlogsDataMiddleware, async (req, res, next) => {
-  try {
-    const blogData = req?.blogData
-    const searchQuery = req.query?.query
+app.get(
+  "/api/blog-search",
+  fetchBlogsDataMiddleware,
+  async (req, res, next) => {
+    try {
+      const blogData = req?.blogData;
+      const searchQuery = req.query?.query;
 
-    if (!searchQuery) {
-      throw createError(400, "No Query Parameter provided");
+      if (!searchQuery) {
+        throw createError(400, "No Query Parameter provided");
+      }
+
+      const searchResult = blogData.filter((blog) =>
+        blog.title.toLowerCase().includes(searchQuery)
+      );
+
+      res.json({ result: searchResult });
+    } catch (error) {
+      next(error);
     }
-
-    const searchResult = blogData.filter((blog) =>
-      blog.title.toLowerCase().includes(searchQuery)
-    );
-
-    res.json({ result: searchResult });
-  } catch (error) {
-    next(error);
   }
+);
+
+// all-catch-route
+app.use(async (req, res, next) => {
+  next(createError.NotFound("This route does not exists"));
+});
+
+// error handler
+app.use(async (err, req, res, next) => {
+  res.status(err.status || 500);
+  res.send({
+    error: {
+      status: err.status || 500,
+      message: err.message,
+    },
+  });
 });
 
 app.listen(8080, () => {
