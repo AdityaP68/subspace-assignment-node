@@ -62,22 +62,27 @@ app.get("/api/blog-stats", fetchBlogsDataMiddleware, async (req, res, next) => {
   }
 });
 
+// Route handler for searching blogs based on a query parameter
 app.get(
   "/api/blog-search",
   fetchBlogsDataMiddleware,
   async (req, res, next) => {
     try {
+      // Get the fetched blog data from the middleware
       const blogData = req?.blogData;
+      // Extract the search query parameter from the request
       const searchQuery = req.query?.query;
 
+      // Filter the blog data based on titles containing the search query
       if (!searchQuery) {
         throw createError(400, "No Query Parameter provided");
       }
-
+      // Filter the blog data based on titles containing the search query
       const searchResult = blogData.filter((blog) =>
         blog.title.toLowerCase().includes(searchQuery)
       );
 
+      // Send a JSON response containing the search results
       res.json({ result: searchResult });
     } catch (error) {
       next(error);
@@ -96,7 +101,7 @@ app.use(async (err, req, res, next) => {
   res.send({
     error: {
       status: err.status || 500,
-      message: err.message,
+      message: err.message || "Internal Server Error",
     },
   });
 });
