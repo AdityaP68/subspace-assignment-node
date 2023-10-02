@@ -9,7 +9,7 @@ Before running the application, make sure you have Node.js and npm installed on 
 1. Clone this repository to your local machine:
 
 ```
-   git clone https://github.com/yourusername/blog-api.git
+git clone https://github.com/yourusername/blog-api.git
 ```
 
 2. Navigate to the project directory:
