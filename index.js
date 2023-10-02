@@ -10,10 +10,16 @@ require("dotenv").config();
 const app = express();
 
 // middleware for logging http req in dev env
-app.use(morgan("combined"));
+if (process.env.ENV?.toLowerCase() === "dev") {
+  app.use(morgan("combined"));
+}
 // middleware setup for data serialization
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
+app.get("/", async (req, res, next) => {
+  res.send("Home Route");
+});
 
 // route handler for fetching blog insights
 app.get("/api/blog-stats", fetchBlogsDataMiddleware, async (req, res, next) => {
@@ -90,12 +96,12 @@ app.get(
   }
 );
 
-// all-catch-route
+// all-catching-route
 app.use(async (req, res, next) => {
   next(createError.NotFound("This route does not exists"));
 });
 
-// error handler
+// error handling middleware
 app.use(async (err, req, res, next) => {
   res.status(err.status || 500);
   res.send({

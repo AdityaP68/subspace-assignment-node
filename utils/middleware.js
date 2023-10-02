@@ -4,15 +4,13 @@ const axios = require("axios");
 // Middleware for fetching blog data
 const fetchBlogsDataMiddleware = async (req, res, next) => {
   try {
+
     // Make an HTTP GET request to the specified URL with headers
     const response = await axios.get(process.env.URL, {
       headers: {
         "x-hasura-admin-secret": process.env.SECRET,
       },
     });
-
-    // Log the response for debugging purposes
-    console.log(response);
 
     // Check if the API request was successful (status code 200)
     if (response.status !== 200) {
