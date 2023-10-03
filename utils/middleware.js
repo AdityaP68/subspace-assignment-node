@@ -4,7 +4,6 @@ const axios = require("axios");
 // Middleware for fetching blog data
 const fetchBlogsDataMiddleware = async (req, res, next) => {
   try {
-
     // Make an HTTP GET request to the specified URL with headers
     const response = await axios.get(process.env.URL, {
       headers: {

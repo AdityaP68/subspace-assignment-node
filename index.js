@@ -3,8 +3,8 @@ const _ = require("lodash");
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const createError = require("http-errors");
-const axios = require("axios");
 const { fetchBlogsDataMiddleware } = require("./utils/middleware");
+const { memoizedAnalyticsData, memoizedSearchBlogs } = require("./utils/cache");
 require("dotenv").config();
 
 const app = express();
@@ -34,35 +34,39 @@ app.get("/api/blog-stats", fetchBlogsDataMiddleware, async (req, res, next) => {
     }
 
     // 2. Process the Data using Lodash package
-    try {
-      // Calculate the total number of blogs fetched
-      const totalBlogs = blogData.length;
+    // try {
+    //   // Calculate the total number of blogs fetched
+    //   const totalBlogs = blogData.length;
 
-      // Find the blog with the longest title
-      const longestTitleBlog = _.maxBy(blogData, (blog) => blog.title.length);
+    //   // Find the blog with the longest title
+    //   const longestTitleBlog = _.maxBy(blogData, (blog) => blog.title.length);
 
-      // Determine the number of blogs with titles containing the word "privacy"
-      const blogsWithPrivacyTitle = _.filter(blogData, (blog) =>
-        _.includes(_.toLower(blog.title), "privacy")
-      ).length;
+    //   // Determine the number of blogs with titles containing the word "privacy"
+    //   const blogsWithPrivacyTitle = _.filter(blogData, (blog) =>
+    //     _.includes(_.toLower(blog.title), "privacy")
+    //   ).length;
 
-      // Create an array of unique blog titles (no duplicates)
-      const uniqueBlogTitles = _.uniqBy(blogData, "title").map(
-        (blog) => blog.title
-      );
+    //   // Create an array of unique blog titles (no duplicates)
+    //   const uniqueBlogTitles = _.uniqBy(blogData, "title").map(
+    //     (blog) => blog.title
+    //   );
 
-      // 3. Send JSON response for processed data
-      res.json({
-        totalBlogs,
-        longestTitleBlog: longestTitleBlog.title,
-        blogsWithPrivacyTitle,
-        uniqueBlogTitles,
-      });
-    } catch (error) {
-      // handle error while data processing
-      const processingError = createError(500, "Error processing the data");
-      next(processingError);
-    }
+    //   // 3. Send JSON response for processed data
+    //   res.json({
+    //     totalBlogs,
+    //     longestTitleBlog: longestTitleBlog.title,
+    //     blogsWithPrivacyTitle,
+    //     uniqueBlogTitles,
+    //   });
+    // } catch (error) {
+    //   // handle error while data processing
+    //   const processingError = createError(500, "Error processing the data");
+    //   next(processingError);
+    // }
+
+    // Implemented Data Caching using Lodash
+    const blogStats = memoizedAnalyticsData(blogData);
+    res.status(200).json(blogStats);
   } catch (error) {
     next(error);
   }
@@ -83,10 +87,14 @@ app.get(
       if (!searchQuery) {
         throw createError(400, "No Query Parameter provided");
       }
-      // Filter the blog data based on titles containing the search query
-      const searchResult = blogData.filter((blog) =>
-        blog.title.toLowerCase().includes(searchQuery)
-      );
+      // // Filter the blog data based on titles containing the search query
+      // const searchResult = blogData.filter((blog) =>
+      //   blog.title.toLowerCase().includes(searchQuery)
+      // );
+
+      // Use the memoized function to search for blogs
+      const searchResult = await memoizedSearchBlogs(blogData, searchQuery);
+      console.log(searchResult);
 
       // Send a JSON response containing the search results
       res.json({ result: searchResult });
